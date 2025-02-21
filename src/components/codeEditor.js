@@ -8,6 +8,7 @@ import { io } from "socket.io-client";
 
 const socket = io("http://localhost:5000");
 
+
 const CodeEditor = () => {
   const editorRef = useRef(null);
   const ydoc = useRef(new Y.Doc()).current;
@@ -16,19 +17,26 @@ const CodeEditor = () => {
 
   useEffect(() => {
     socket.emit("join-document", docId);
-
+  
     socket.on("document-update", (update) => {
-      Y.applyUpdate(ydoc, update);
+      console.log("Received update, length:", update.byteLength);
+      try {
+        Y.applyUpdate(ydoc, update);
+      } catch (error) {
+        console.error("Failed to apply update:", error);
+      }
     });
-
+  
     ydoc.on("update", (update) => {
+      console.log("Sending update, length:", update.byteLength);
       socket.emit("send-update", docId, update);
     });
-
+  
     return () => {
       socket.off("document-update");
     };
   }, [docId, ydoc]);
+  
 
   const handleEditorDidMount = (editor, monaco) => {
     editorRef.current = editor;
